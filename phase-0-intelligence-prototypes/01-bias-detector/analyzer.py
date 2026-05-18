@@ -204,15 +204,15 @@ def compute_diversity_score(articles: list[dict]) -> dict:
         "credibility_avg": round(credibility_avg, 2),
     }
 
-if __name__ == "__main__":
-    from fetcher import fetch_articles
-    raw = fetch_articles("climate change", days_back=2, max_articles=20)
-    print(f"Fetched {len(raw)} articles")
-    enriched = analyze_articles(raw)
-    print(enriched[0]["sentiment_label"], enriched[0]["sentiment_score"])
+# if __name__ == "__main__":
+#     from fetcher import fetch_articles
+#     raw = fetch_articles("climate change", days_back=2, max_articles=20)
+#     print(f"Fetched {len(raw)} articles")
+#     enriched = analyze_articles(raw)
+#     print(enriched[0]["sentiment_label"], enriched[0]["sentiment_score"])
     
-    contradictions = detect_contradictions(enriched)
-    print(f"Found {len(contradictions)} contradictions")
+#     contradictions = detect_contradictions(enriched)
+#     print(f"Found {len(contradictions)} contradictions")
     
-    diversity = compute_diversity_score(enriched)
-    print(f"Diversity score: {diversity['score']}")
+#     diversity = compute_diversity_score(enriched)
+#     print(f"Diversity score: {diversity['score']}")

@@ -6,7 +6,6 @@ charts.py — All Plotly visualizations for the dashboard.
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
-import numpy as np
 
 # ── Council color palette (cyberpunk-inspired) ──
 COLORS = {
@@ -119,17 +118,26 @@ def sentiment_bias_scatter(articles: list[dict]) -> go.Figure:
                            font=dict(size=9, color=COLORS["subtext"]), align="center")
 
     fig.update_layout(
-        **_base_layout("Sentiment vs Political Lean"),
-        xaxis=dict(title="← Left  |  Bias Score  |  Right →",
-                   range=[-1.05, 1.05], gridcolor=COLORS["border"], zerolinecolor=COLORS["border"]),
-        yaxis=dict(title="← Negative  |  Sentiment  |  Positive →",
-                   range=[-1.05, 1.05], gridcolor=COLORS["border"], zerolinecolor=COLORS["border"]),
+        title=dict(text="Sentiment vs Political Lean", font=dict(color=COLORS["text"], size=15), x=0.01),
         paper_bgcolor=COLORS["panel"],
         plot_bgcolor=COLORS["panel"],
         font=dict(color=COLORS["text"], family="monospace"),
         margin=dict(t=45, b=30, l=60, r=30),
+        xaxis=dict(
+            title="← Left  |  Bias Score  |  Right →",
+            range=[-1.05, 1.05],
+            gridcolor=COLORS["border"],
+            zerolinecolor=COLORS["border"],
+        ),
+        yaxis=dict(
+            title="← Negative  |  Sentiment  |  Positive →",
+            range=[-1.05, 1.05],
+            gridcolor=COLORS["border"],
+            zerolinecolor=COLORS["border"],
+        ),
         legend=dict(bgcolor=COLORS["bg"], bordercolor=COLORS["border"], borderwidth=1),
     )
+
     return fig
 
 
@@ -157,10 +165,12 @@ def credibility_heatmap(articles: list[dict]) -> go.Figure:
             colorscale=[[0, "#f85149"], [0.5, "#d29922"], [1, "#3fb950"]],
             showscale=True,
             colorbar=dict(
-                title="Score",
-                tickfont=dict(color=COLORS["text"]),
-                titlefont=dict(color=COLORS["text"]),
-            ),
+                    title=dict(
+                        text="Score",
+                        font=dict(color=COLORS["text"]),
+                    ),
+                    tickfont=dict(color=COLORS["text"]),
+                ),
             cmin=0, cmax=1,
         ),
         text=[f"{v:.2f}" for v in agg["credibility"]],
@@ -170,16 +180,21 @@ def credibility_heatmap(articles: list[dict]) -> go.Figure:
     ))
 
     fig.update_layout(
-        **_base_layout("Source Credibility Scores"),
-        xaxis=dict(title="Credibility Score", range=[0, 1.1],
-                   gridcolor=COLORS["border"], zerolinecolor=COLORS["border"]),
-        yaxis=dict(title=""),
-        height=max(300, len(agg) * 38),
+        title=dict(text="Source Credibility Scores", font=dict(color=COLORS["text"], size=15), x=0.01),
         paper_bgcolor=COLORS["panel"],
         plot_bgcolor=COLORS["panel"],
         font=dict(color=COLORS["text"], family="monospace"),
         margin=dict(t=45, b=30, l=140, r=60),
+        xaxis=dict(
+            title="Credibility Score",
+            range=[0, 1.1],
+            gridcolor=COLORS["border"],
+            zerolinecolor=COLORS["border"],
+        ),
+        yaxis=dict(title=""),
+        height=max(300, len(agg) * 38),
     )
+
     return fig
 
 
@@ -258,14 +273,30 @@ def contradiction_chart(contradictions: list[dict]) -> go.Figure:
     ))
 
     fig.update_layout(
-        **_base_layout("Detected Contradictions (Sentiment Divergence)"),
-        xaxis=dict(title="Sentiment Divergence", range=[0, 2.2],
-                   gridcolor=COLORS["border"], zerolinecolor=COLORS["border"]),
-        yaxis=dict(title=""),
-        height=max(250, len(df) * 42),
+        title=dict(text="Detected Contradictions (Sentiment Divergence)", font=dict(color=COLORS["text"], size=15), x=0.01),
         paper_bgcolor=COLORS["panel"],
         plot_bgcolor=COLORS["panel"],
         font=dict(color=COLORS["text"], family="monospace"),
         margin=dict(t=45, b=30, l=170, r=60),
+        xaxis=dict(
+            title="Sentiment Divergence",
+            range=[0, 2.2],
+            gridcolor=COLORS["border"],
+            zerolinecolor=COLORS["border"],
+        ),
+        yaxis=dict(title=""),
+        height=max(250, len(df) * 42),
     )
+
     return fig
+
+# if __name__ == "__main__":
+#     # Fake minimal data
+#     test_articles = [
+#         {"bias_label": "Left-Leaning", "sentiment_score": -0.3, "bias_score": -0.2,
+#          "source_name": "BBC", "title": "Test", "credibility": 0.9, "region": "Global"},
+#         {"bias_label": "Right-Leaning", "sentiment_score": 0.5, "bias_score": 0.3,
+#          "source_name": "Fox", "title": "Test 2", "credibility": 0.6, "region": "Global"},
+#     ]
+#     fig = bias_distribution_chart(test_articles)
+#     fig.show()

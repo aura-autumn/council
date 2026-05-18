@@ -19,7 +19,6 @@ This separation matters: charts.py doesn't know anything about how the data was 
 - `plotly.graph_objects as go`
 - `plotly.express as px`
 - `pandas as pd`
-- `numpy as np`
 
 **Then define your color palette as a dictionary called `COLORS`.**
 
