@@ -8,7 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def load_sources() -> dict:
-    "Load the source metadata from the sources.json file and return it as a dictionary."
+    """
+    Load the source metadata from the sources.json file and return it as a dictionary.
+    """
+
     path = pathlib.Path(__file__).parent / "sources.json"
     if not path.exists():
         raise FileNotFoundError(f"Could not find sources.json at {path}")
@@ -26,6 +29,9 @@ BIAS_LABEL_MAP = {
 }
 
 def get_bias_label(score: float) -> str:
+    """
+    Get the bias label for a given score.
+    """
     for (lo, hi), label in BIAS_LABEL_MAP.items():
         if lo <= score < hi:
             return label
@@ -35,6 +41,9 @@ def get_bias_label(score: float) -> str:
             return "Far Left"
         
 def fetch_articles(topic: str, days_back: int = 3, max_articles: int=40) -> list[dict]:
+    """
+    Fetches news articles related to the given topic from the NewsAPI, along with source metadata.
+    """
     api_key =os.getenv("NEWSAPIKEY")
     if not api_key:
         raise ValueError("NEWSAPIKEY not set in .env")
@@ -83,3 +92,9 @@ def fetch_articles(topic: str, days_back: int = 3, max_articles: int=40) -> list
             "region": meta["region"],
         })
     return articles
+
+# Test the function by fetching articles about "India economy" from the last 2 days, limiting to 5 articles for brevity.
+# if __name__ == "__main__":
+#     articles = fetch_articles("India economy", days_back=2, max_articles=5)
+# for a in articles:
+#     print(a["source_name"], a["bias_label"], a["title"][:60])
