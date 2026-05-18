@@ -8,7 +8,6 @@ Run:
 
 import streamlit as st
 import pandas as pd
-import time
 
 from fetcher import fetch_articles
 from analyzer import analyze_articles, detect_contradictions, compute_diversity_score
@@ -164,7 +163,7 @@ with st.sidebar:
         <b style="color:#58a6ff">COUNCIL</b> · Phase 0<br>
         Prototype 01: Bias Detector<br>
         Feeds into: Analyzer Agent<br>
-        <a href="https://github.com/YOUR_USERNAME/council" 
+        <a href="https://github.com/aura-autumn/council" 
            style="color:#3fb950">github.com/council</a>
         </div>
         """,

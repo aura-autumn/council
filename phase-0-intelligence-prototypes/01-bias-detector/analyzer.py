@@ -6,25 +6,25 @@ Uses a lightweight HuggingFace model for sentiment so this runs fully offline
 after first download — no OpenAI key required.
 """
 
-from __future__ import annotations
 import re
 import numpy as np
+
+from transformers import pipeline
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
-
 
 # ──────────────────────────────────────────────
 # Sentiment scoring (zero-shot, CPU-friendly)
 # ──────────────────────────────────────────────
 
-_pipeline = None  # lazy-load so Streamlit startup stays fast
-
+_pipeline = None  # lazy-load for faster Streamlit startup
 
 def _get_pipeline():
+    """
+    Returns a Hugging Face pipeline for sentiment analysis, loading the model on first use.
+    """
     global _pipeline
-    if _pipeline is None:
-        from transformers import pipeline
-        # distilbert is small (~250 MB) and fast on CPU
+    if _pipeline is None:       
         _pipeline = pipeline(
             "text-classification",
             model="distilbert-base-uncased-finetuned-sst-2-english",
@@ -33,18 +33,20 @@ def _get_pipeline():
         )
     return _pipeline
 
-
 def score_sentiment(text: str) -> float:
     """
     Returns a sentiment score: -1.0 (very negative) to +1.0 (very positive).
     """
     if not text or not text.strip():
         return 0.0
-    pipe = _get_pipeline()
-    result = pipe(text[:512])[0]
-    score = result["score"]
-    return score if result["label"] == "POSITIVE" else -score
+    pipeline = _get_pipeline()
 
+    #the [:512] slices to model's max length, [0] gets the first (only) result
+    #The result is a dict like `{"label": "POSITIVE", "score": 0.92}`
+    result = pipeline(text[:512])[0]
+    score = result["score"]
+
+    return score if result["label"] == "POSITIVE" else -score
 
 def analyze_articles(articles: list[dict]) -> list[dict]:
     """
@@ -54,29 +56,33 @@ def analyze_articles(articles: list[dict]) -> list[dict]:
     - text_for_analysis: combined title + description
     """
     enriched = []
+
     for art in articles:
         text = f"{art['title']}. {art['description']}"
         sentiment = score_sentiment(text)
+
         enriched.append({
             **art,
             "sentiment_score": sentiment,
-            "sentiment_label": (
+            # The thresholds for labeling can be adjusted based on desired sensitivity
+            "sentiment_label":(
                 "Positive" if sentiment > 0.15
                 else "Negative" if sentiment < -0.15
                 else "Neutral"
             ),
-            "text_for_analysis": text,
+            "text_for_analysis": text
         })
     return enriched
-
 
 # ──────────────────────────────────────────────
 # Contradiction detection
 # ──────────────────────────────────────────────
 
 def _clean(text: str) -> str:
-    return re.sub(r"\s+", " ", text.strip().lower())
-
+    """Basic text cleaning: lowercase and collapse whitespace."""
+    text = text.strip().lower()
+    text = re.sub(r"\s+", " ", text)
+    return text
 
 def detect_contradictions(articles: list[dict], threshold: float = 0.25) -> list[dict]:
     """
@@ -88,7 +94,7 @@ def detect_contradictions(articles: list[dict], threshold: float = 0.25) -> list
     """
     if len(articles) < 2:
         return []
-
+    
     texts = [_clean(a["text_for_analysis"]) for a in articles]
 
     vectorizer = TfidfVectorizer(stop_words="english", max_features=500)
@@ -96,27 +102,27 @@ def detect_contradictions(articles: list[dict], threshold: float = 0.25) -> list
         tfidf_matrix = vectorizer.fit_transform(texts)
     except ValueError:
         return []
-
-    sim_matrix = cosine_similarity(tfidf_matrix)
-    sentiments = np.array([a["sentiment_score"] for a in articles])
+    
+    similarity_matrix = cosine_similarity(tfidf_matrix)
+    sentiments = np.array([a["sentiment_score"] for a in articles], dtype=float)
 
     contradictions = []
     seen = set()
 
     for i in range(len(articles)):
-        for j in range(i + 1, len(articles)):
+        for j in range (i+1, len(articles)):
             pair_key = (i, j)
             if pair_key in seen:
                 continue
 
-            content_similar = sim_matrix[i, j] >= 0.35
+            content_sim = similarity_matrix[i, j] >= 0.35
             sentiment_diff = abs(sentiments[i] - sentiments[j])
             opposing_sentiment = sentiment_diff >= threshold
 
             # Skip same source
             same_source = articles[i]["source_name"] == articles[j]["source_name"]
 
-            if content_similar and opposing_sentiment and not same_source:
+            if content_sim and opposing_sentiment and not same_source:
                 seen.add(pair_key)
                 contradictions.append({
                     "article_a": {
@@ -135,7 +141,8 @@ def detect_contradictions(articles: list[dict], threshold: float = 0.25) -> list
                         "bias_label": articles[j]["bias_label"],
                         "url": articles[j]["url"],
                     },
-                    "content_similarity": round(float(sim_matrix[i, j]), 3),
+                    
+                    "content_similarity": round(float(similarity_matrix[i, j]), 3),
                     "sentiment_divergence": round(float(sentiment_diff), 3),
                     "severity": (
                         "High" if sentiment_diff > 0.6
@@ -146,12 +153,9 @@ def detect_contradictions(articles: list[dict], threshold: float = 0.25) -> list
 
     # Sort by severity then divergence
     severity_order = {"High": 0, "Medium": 1, "Low": 2}
-    contradictions.sort(
-        key=lambda x: (severity_order[x["severity"]], -x["sentiment_divergence"])
-    )
+    contradictions.sort(key=lambda x: (severity_order[x["severity"]], -x["sentiment_divergence"]))
 
-    return contradictions[:15]  # cap at 15 most significant
-
+    return contradictions[:15]
 
 # ──────────────────────────────────────────────
 # Diversity score
@@ -199,3 +203,16 @@ def compute_diversity_score(articles: list[dict]) -> dict:
         "bias_spread_std": round(bias_spread, 3),
         "credibility_avg": round(credibility_avg, 2),
     }
+
+# if __name__ == "__main__":
+#     from fetcher import fetch_articles
+#     raw = fetch_articles("climate change", days_back=2, max_articles=20)
+#     print(f"Fetched {len(raw)} articles")
+#     enriched = analyze_articles(raw)
+#     print(enriched[0]["sentiment_label"], enriched[0]["sentiment_score"])
+    
+#     contradictions = detect_contradictions(enriched)
+#     print(f"Found {len(contradictions)} contradictions")
+    
+#     diversity = compute_diversity_score(enriched)
+#     print(f"Diversity score: {diversity['score']}")
