@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "")
+NEWSAPI_KEY = os.getenv("NEWSAPIKEY", "")
 NEWSAPI_BASE = "https://newsapi.org/v2/everything"
 
 # ── Source metadata (bias + credibility) — same registry as prototype 01 ────

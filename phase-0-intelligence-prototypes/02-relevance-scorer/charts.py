@@ -34,13 +34,15 @@ LAYOUT_BASE = dict(
 )
 
 
-def _axis(title="", color=TEXT_DIM):
+def _axis(title_text="", color=TEXT_DIM):
     return dict(
-        title=title,
+        title=dict(
+            text=title_text,
+            font=dict(color=color, size=11)  # Or whatever size your code had
+        ),
         gridcolor=GRID,
         zerolinecolor=GRID,
         tickfont=dict(color=TEXT_DIM, size=10),
-        titlefont=dict(color=color, size=11),
     )
 
 
@@ -176,7 +178,7 @@ def topic_frequency(articles: List[Article], top_n: int = 12) -> go.Figure:
         **LAYOUT_BASE,
         title=dict(text="◈ TOP MATCHED TOPICS IN FEED", font=dict(color=ACCENT_CYAN, size=14), x=0.5),
         xaxis=_axis("Match Count"),
-        yaxis=dict(**_axis(), tickfont=dict(color=TEXT, size=10)),
+        yaxis={**_axis(), "tickfont": dict(color=TEXT, size=10)},
         height=max(300, 30 * len(labels) + 80),
     )
     return fig
